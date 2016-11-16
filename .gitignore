@@ -27,3 +27,32 @@
 *.exe
 *.out
 *.app
+
+# CMake
+*.codelite/
+*.pbxuser
+*.xcscheme
+*.xccheckout
+*.xcodeproj
+*.pdb
+*.sdf
+*.opensdf
+*.suo
+*.exp
+*.ilk
+*.map
+*.build
+Build/
+cmake_install.cmake
+CMakeCache.txt
+CMakeFiles
+CMakeScripts
+
+# Diff files
+*.diff
+*.patch
+*_BACKUP_*
+*_BASE_*
+*_LOCAL_*
+*_REMOTE_*
+
