@@ -2,13 +2,25 @@ cmake_minimum_required(VERSION 3.4.0 FATAL_ERROR)
 
 project(OpenGL-Tutorial)
 
+set(GLTUT_SRC_DIR "${CMAKE_CURRENT_LIST_DIR}/src")
+
 find_package(SDL REQUIRED)
 find_package(OpenGL REQUIRED)
 find_package(GLEW REQUIRED)
 
-add_executable(opengl-tut src/main.cpp)
+add_executable(opengl-tut
+  src/main.cpp
+  src/fragment-shader.glsl
+  src/vertex-shader.glsl
+)
 
 set_property(TARGET opengl-tut PROPERTY CXX_STANDARD 14)
+
+add_custom_command(TARGET opengl-tut
+  POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E copy "${GLTUT_SRC_DIR}/fragment-shader.glsl" "$<TARGET_FILE_DIR:opengl-tut>"
+  COMMAND ${CMAKE_COMMAND} -E copy "${GLTUT_SRC_DIR}/vertex-shader.glsl" "$<TARGET_FILE_DIR:opengl-tut>"
+)
 
 target_compile_definitions(opengl-tut PUBLIC GLEW_STATIC)
 
