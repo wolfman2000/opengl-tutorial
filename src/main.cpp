@@ -54,11 +54,11 @@ int main(int argc, char *argv[]) {
   glewExperimental = GL_TRUE;
   glewInit();
 
-  // set up the vertices. Each vertex is in (X, Y) format.
+  // set up the vertices. Each vertex is in (X, Y, R, G, B) format.
   float vertices[] = {
-    0.f, 0.5f,
-    0.5f, -0.5f,
-    -0.5f, -0.5f
+    0.f, 0.5f, 1.f, 0.f, 0.f,
+    0.5f, -0.5f, 0.f, 1.f, 0.f,
+    -0.5f, -0.5f, 0.f, 0.f, 1.f
   };
 
   // Set up the vertex array object for storing vbo references.
@@ -101,12 +101,14 @@ int main(int argc, char *argv[]) {
   // set up the position.
   auto posAttrib = glGetAttribLocation(shaderProgram, "position");
   glEnableVertexAttribArray(posAttrib);
-  glVertexAttribPointer(posAttrib, 2, GL_FLOAT, GL_FALSE, 0, 0);
+  glVertexAttribPointer(posAttrib, 2, GL_FLOAT, GL_FALSE,
+                        5 * sizeof(float), 0);
 
-  auto uniColor = glGetUniformLocation(shaderProgram, "triangleColor");
-  glUniform3f(uniColor, 1.f, 0.f, 0.f);
+  auto colAttrib = glGetAttribLocation(shaderProgram, "color");
+  glEnableVertexAttribArray(colAttrib);
+  glVertexAttribPointer(colAttrib, 3, GL_FLOAT, GL_FALSE,
+                        5 * sizeof(float), (void *)(2 * sizeof(float)));
 
-  auto t_start = std::chrono::high_resolution_clock::now();
   SDL_Event windowEvent;
 
   for (;;) {
@@ -122,10 +124,6 @@ int main(int argc, char *argv[]) {
     glClearColor(0.f, 0.f, 0.f, 1.f);
     glClear(GL_COLOR_BUFFER_BIT);
 
-    auto t_now = std::chrono::high_resolution_clock::now();
-    auto time = std::chrono::duration_cast<std::chrono::duration<float>>(t_now - t_start).count();
-
-    glUniform3f(uniColor, (sin(time * 4.f) + 1.f) / 2.f, 0.f, 0.f);
     glDrawArrays(GL_TRIANGLES, 0, 3);
 
     SDL_GL_SwapWindow(window->get());
