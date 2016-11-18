@@ -1,12 +1,12 @@
 #version 150
 
 in vec2 position;
-in vec3 color;
+in float grayscale;
 
-out vec3 Color;
+out float GrayScale;
 
 void main() {
-  Color = color;
+  GrayScale = grayscale;
   gl_Position = vec4(position, 0.0, 1.0);
 }
 

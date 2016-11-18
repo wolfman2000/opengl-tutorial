@@ -54,11 +54,11 @@ int main(int argc, char *argv[]) {
   glewExperimental = GL_TRUE;
   glewInit();
 
-  // set up the vertices. Each vertex is in (X, Y, R, G, B) format.
+  // set up the vertices. Each vertex is in (X, Y, grayscale) format.
   float vertices[] = {
-    0.f, 0.5f, 1.f, 0.f, 0.f,
-    0.5f, -0.5f, 0.f, 1.f, 0.f,
-    -0.5f, -0.5f, 0.f, 0.f, 1.f
+    0.f, 0.5f, 1/3.f,
+    0.5f, -0.5f, 2/3.f,
+    -0.5f, -0.5f, 1.f
   };
 
   // Set up the vertex array object for storing vbo references.
@@ -102,12 +102,12 @@ int main(int argc, char *argv[]) {
   auto posAttrib = glGetAttribLocation(shaderProgram, "position");
   glEnableVertexAttribArray(posAttrib);
   glVertexAttribPointer(posAttrib, 2, GL_FLOAT, GL_FALSE,
-                        5 * sizeof(float), 0);
+                        3 * sizeof(float), 0);
 
-  auto colAttrib = glGetAttribLocation(shaderProgram, "color");
+  auto colAttrib = glGetAttribLocation(shaderProgram, "grayscale");
   glEnableVertexAttribArray(colAttrib);
-  glVertexAttribPointer(colAttrib, 3, GL_FLOAT, GL_FALSE,
-                        5 * sizeof(float), (void *)(2 * sizeof(float)));
+  glVertexAttribPointer(colAttrib, 1, GL_FLOAT, GL_FALSE,
+                        3 * sizeof(float), (void *)(2 * sizeof(float)));
 
   SDL_Event windowEvent;
 
