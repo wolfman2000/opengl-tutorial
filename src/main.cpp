@@ -5,6 +5,7 @@
 #include <memory>
 #include <iostream>
 #include <fstream>
+#include <sstream>
 
 struct SDL_Deleter {
   void operator()(SDL_Window* ptr) {
@@ -20,17 +21,14 @@ struct SDL_Deleter {
   }
 };
 
-char * readShader(std::string path) {
-  std::ifstream t;
-  int length;
-  t.open(path);
-  t.seekg(0, std::ios::end);
-  length = t.tellg();
-  t.seekg(0, std::ios::beg);
-  char *buffer = new char[length];
-  t.read(buffer, length);
-  t.close();
-  return buffer;
+std::string readShader(std::string path) {
+  std::ifstream t(path);
+  if (!t) {
+    return "";
+  }
+  std::ostringstream stream;
+  stream << t.rdbuf();
+  return stream.str();
 }
 
 int main(int argc, char *argv[]) {
@@ -78,12 +76,14 @@ int main(int argc, char *argv[]) {
   glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
   auto vertexShader = glCreateShader(GL_VERTEX_SHADER);
-  auto *vertexSource = readShader(std::string() + base_path + "vertex-shader.glsl");
+  auto vertexCode = readShader(std::string() + base_path + "vertex-shader.glsl");
+  auto vertexSource = vertexCode.c_str();
   glShaderSource(vertexShader, 1, &vertexSource, nullptr);
   glCompileShader(vertexShader);
 
   auto fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-  auto *fragmentSource = readShader(std::string() + base_path + "fragment-shader.glsl");
+  auto fragmentCode = readShader(std::string() + base_path + "fragment-shader.glsl");
+  auto fragmentSource = fragmentCode.c_str();
   glShaderSource(fragmentShader, 1, &fragmentSource, nullptr);
   glCompileShader(fragmentShader);
 
