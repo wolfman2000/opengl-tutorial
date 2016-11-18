@@ -1,6 +1,7 @@
 #include <GL/glew.h>
 #include <SDL.h>
 #include <SDL_opengl.h>
+#include <SDL_image.h>
 
 #include <memory>
 #include <iostream>
@@ -19,6 +20,12 @@ struct SDL_Deleter {
       SDL_GL_DeleteContext(ptr);
     }
   }
+
+  void operator()(SDL_Surface* ptr) {
+    if (ptr) {
+      SDL_FreeSurface(ptr);
+    }
+  }
 };
 
 std::string readShader(std::string path) {
@@ -33,6 +40,7 @@ std::string readShader(std::string path) {
 
 int main(int argc, char *argv[]) {
   SDL_Init(SDL_INIT_VIDEO);
+  IMG_Init(IMG_INIT_PNG);
 
   auto *base_path = SDL_GetBasePath();
 
@@ -52,12 +60,12 @@ int main(int argc, char *argv[]) {
   glewExperimental = GL_TRUE;
   glewInit();
 
-  // set up the vertices. Each vertex is in (X, Y, R, G, B) format.
+  // set up the vertices. Each vertex is in (X, Y, R, G, B, double tex coords) format.
   float vertices[] = {
-    -0.5f,  0.5f, 1.f, 0.f, 0.f,
-     0.5f,  0.5f, 0.f, 1.f, 0.f,
-     0.5f, -0.5f, 0.f, 0.f, 1.f,
-    -0.5f, -0.5f, 1.f, 1.f, 1.f
+    -0.5f,  0.5f, 1.f, 0.f, 0.f, 0.f, 0.f,
+     0.5f,  0.5f, 0.f, 1.f, 0.f, 1.f, 0.f,
+     0.5f, -0.5f, 0.f, 0.f, 1.f, 1.f, 1.f,
+    -0.5f, -0.5f, 1.f, 1.f, 1.f, 0.f, 1.f
   };
 
   // Set up the vertex array object for storing vbo references.
@@ -96,6 +104,14 @@ int main(int argc, char *argv[]) {
   glShaderSource(vertexShader, 1, &vertexSource, nullptr);
   glCompileShader(vertexShader);
 
+  GLint status;
+  glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &status);
+  if (status != GL_TRUE) {
+    char buffer[512];
+    glGetShaderInfoLog(vertexShader, 512, nullptr, buffer);
+    std::cout << buffer << std::endl;
+  }
+
   auto fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
   auto fragmentCode = readShader(std::string() + base_path + "fragment-shader.glsl");
   auto fragmentSource = fragmentCode.c_str();
@@ -117,12 +133,35 @@ int main(int argc, char *argv[]) {
   auto posAttrib = glGetAttribLocation(shaderProgram, "position");
   glEnableVertexAttribArray(posAttrib);
   glVertexAttribPointer(posAttrib, 2, GL_FLOAT, GL_FALSE,
-                        5 * sizeof(float), 0);
+                        7 * sizeof(float), 0);
 
   auto colAttrib = glGetAttribLocation(shaderProgram, "color");
   glEnableVertexAttribArray(colAttrib);
   glVertexAttribPointer(colAttrib, 3, GL_FLOAT, GL_FALSE,
-                        5 * sizeof(float), (void *)(2 * sizeof(float)));
+                        7 * sizeof(float), (void *)(2 * sizeof(float)));
+
+  auto texAttrib = glGetAttribLocation(shaderProgram, "texcoord");
+  glEnableVertexAttribArray(texAttrib);
+  glVertexAttribPointer(texAttrib, 2, GL_FLOAT, GL_FALSE,
+                        7 * sizeof(float), (void *)(5 * sizeof(float)));
+
+  // Set up a texture buffer object.
+  GLuint tex;
+  glGenTextures(1, &tex);
+  glBindTexture(GL_TEXTURE_2D, tex);
+
+  // Load the image with the help of SDL.
+  auto *origCat = new std::unique_ptr<SDL_Surface, SDL_Deleter>(IMG_Load("sample.png"));
+  auto *fixedCat = new std::unique_ptr<SDL_Surface, SDL_Deleter>(SDL_ConvertSurfaceFormat(origCat->get(), SDL_PIXELFORMAT_RGBA32, 0));
+
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA,
+               fixedCat->get()->w, fixedCat->get()->h, 0, GL_RGBA, GL_UNSIGNED_BYTE,
+               fixedCat->get()->pixels);
+
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
   SDL_Event windowEvent;
 
@@ -143,6 +182,16 @@ int main(int argc, char *argv[]) {
 
     SDL_GL_SwapWindow(window->get());
   }
+
+  glDeleteTextures(1, &tex);
+
+  glDeleteProgram(shaderProgram);
+  glDeleteShader(fragmentShader);
+  glDeleteShader(vertexShader);
+
+  glDeleteBuffers(1, &ebo);
+  glDeleteBuffers(1, &vbo);
+  glDeleteVertexArrays(1, &vao);
 
   SDL_GL_DeleteContext(context);
 
