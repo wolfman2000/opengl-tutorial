@@ -5,6 +5,7 @@
 #include <memory>
 #include <iostream>
 #include <fstream>
+#include <sstream>
 
 struct SDL_Deleter {
   void operator()(SDL_Window* ptr) {
@@ -20,17 +21,14 @@ struct SDL_Deleter {
   }
 };
 
-char * readShader(std::string path) {
-  std::ifstream t;
-  int length;
-  t.open(path);
-  t.seekg(0, std::ios::end);
-  length = t.tellg();
-  t.seekg(0, std::ios::beg);
-  char *buffer = new char[length];
-  t.read(buffer, length);
-  t.close();
-  return buffer;
+std::string readShader(std::string path) {
+  std::ifstream t(path);
+  if (!t) {
+    return "";
+  }
+  std::ostringstream stream;
+  stream << t.rdbuf();
+  return stream.str();
 }
 
 int main(int argc, char *argv[]) {
@@ -56,9 +54,10 @@ int main(int argc, char *argv[]) {
 
   // set up the vertices. Each vertex is in (X, Y, R, G, B) format.
   float vertices[] = {
-    0.f, 0.5f, 1.f, 0.f, 0.f,
-    0.5f, -0.5f, 0.f, 1.f, 0.f,
-    -0.5f, -0.5f, 0.f, 0.f, 1.f
+    -0.5f,  0.5f, 1.f, 0.f, 0.f,
+     0.5f,  0.5f, 0.f, 1.f, 0.f,
+     0.5f, -0.5f, 0.f, 0.f, 1.f,
+    -0.5f, -0.5f, 1.f, 1.f, 1.f
   };
 
   // Set up the vertex array object for storing vbo references.
@@ -77,13 +76,29 @@ int main(int argc, char *argv[]) {
   // copy the vertex data over.
   glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
+  // Set up an element buffer to preserve vertex points in memory.
+  GLuint elements[] = {
+    0, 1, 2,
+    2, 3, 0
+  };
+
+  // And the former element buffer object. This must happen AFTER the vertices!
+  GLuint ebo;
+  glGenBuffers(1, &ebo);
+
+  // load the vertex data into the element buffer.
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+  glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(elements), elements, GL_STATIC_DRAW);
+
   auto vertexShader = glCreateShader(GL_VERTEX_SHADER);
-  auto *vertexSource = readShader(std::string() + base_path + "vertex-shader.glsl");
+  auto vertexCode = readShader(std::string() + base_path + "vertex-shader.glsl");
+  auto vertexSource = vertexCode.c_str();
   glShaderSource(vertexShader, 1, &vertexSource, nullptr);
   glCompileShader(vertexShader);
 
   auto fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-  auto *fragmentSource = readShader(std::string() + base_path + "fragment-shader.glsl");
+  auto fragmentCode = readShader(std::string() + base_path + "fragment-shader.glsl");
+  auto fragmentSource = fragmentCode.c_str();
   glShaderSource(fragmentShader, 1, &fragmentSource, nullptr);
   glCompileShader(fragmentShader);
 
@@ -124,7 +139,7 @@ int main(int argc, char *argv[]) {
     glClearColor(0.f, 0.f, 0.f, 1.f);
     glClear(GL_COLOR_BUFFER_BIT);
 
-    glDrawArrays(GL_TRIANGLES, 0, 3);
+    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
     SDL_GL_SwapWindow(window->get());
   }
