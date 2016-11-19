@@ -22,6 +22,7 @@ add_custom_command(TARGET opengl-tut
   COMMAND ${CMAKE_COMMAND} -E copy "${GLTUT_SRC_DIR}/fragment-shader.glsl" "$<TARGET_FILE_DIR:opengl-tut>"
   COMMAND ${CMAKE_COMMAND} -E copy "${GLTUT_SRC_DIR}/vertex-shader.glsl" "$<TARGET_FILE_DIR:opengl-tut>"
   COMMAND ${CMAKE_COMMAND} -E copy "${GLTUT_SRC_DIR}/sample.png" "$<TARGET_FILE_DIR:opengl-tut>"
+  COMMAND ${CMAKE_COMMAND} -E copy "${GLTUT_SRC_DIR}/sample2.png" "$<TARGET_FILE_DIR:opengl-tut>"
 )
 
 target_compile_definitions(opengl-tut PUBLIC GLEW_STATIC)

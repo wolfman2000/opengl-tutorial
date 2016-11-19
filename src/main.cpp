@@ -145,18 +145,35 @@ int main(int argc, char *argv[]) {
   glVertexAttribPointer(texAttrib, 2, GL_FLOAT, GL_FALSE,
                         7 * sizeof(float), (void *)(5 * sizeof(float)));
 
-  // Set up a texture buffer object.
-  GLuint tex;
-  glGenTextures(1, &tex);
-  glBindTexture(GL_TEXTURE_2D, tex);
+  // Set up a collection of texture buffer objects.
+  GLuint textures[2];
+  glGenTextures(2, textures);
+  glActiveTexture(GL_TEXTURE0);
+  glBindTexture(GL_TEXTURE_2D, textures[0]);
 
   // Load the image with the help of SDL.
-  auto *origCat = new std::unique_ptr<SDL_Surface, SDL_Deleter>(IMG_Load("sample.png"));
-  auto *fixedCat = new std::unique_ptr<SDL_Surface, SDL_Deleter>(SDL_ConvertSurfaceFormat(origCat->get(), SDL_PIXELFORMAT_RGBA32, 0));
+  auto origCat = new std::unique_ptr<SDL_Surface, SDL_Deleter>(IMG_Load("sample.png"));
+  auto fixedCat = new std::unique_ptr<SDL_Surface, SDL_Deleter>(SDL_ConvertSurfaceFormat(origCat->get(), SDL_PIXELFORMAT_RGBA32, 0));
 
   glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA,
                fixedCat->get()->w, fixedCat->get()->h, 0, GL_RGBA, GL_UNSIGNED_BYTE,
                fixedCat->get()->pixels);
+  glUniform1i(glGetUniformLocation(shaderProgram, "texKitten"), 0);
+
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+  auto origDog = new std::unique_ptr<SDL_Surface, SDL_Deleter>(IMG_Load("sample2.png"));
+  auto fixedDog = new std::unique_ptr<SDL_Surface, SDL_Deleter>(SDL_ConvertSurfaceFormat(origDog->get(), SDL_PIXELFORMAT_RGBA32, 0));
+
+  glActiveTexture(GL_TEXTURE1);
+  glBindTexture(GL_TEXTURE_2D, textures[1]);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA,
+               fixedDog->get()->w, fixedDog->get()->h, 0, GL_RGBA, GL_UNSIGNED_BYTE,
+               fixedDog->get()->pixels);
+  glUniform1i(glGetUniformLocation(shaderProgram, "texPuppy"), 1);
 
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -183,7 +200,7 @@ int main(int argc, char *argv[]) {
     SDL_GL_SwapWindow(window->get());
   }
 
-  glDeleteTextures(1, &tex);
+  glDeleteTextures(2, textures);
 
   glDeleteProgram(shaderProgram);
   glDeleteShader(fragmentShader);
